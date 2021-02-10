@@ -1,0 +1,54 @@
+---
+# Traefik Dashboard
+# Only available on the admin port which is setup as a 31080 NodePort
+# This port is blocked by OpenStack LB so you have to use SSH port forward
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRoute
+metadata:
+  name: traefik-dashboard
+spec:
+  entryPoints:
+    - admin
+  routes:
+    - match: Host(`traefik.local`) && (PathPrefix(`/dashboard`) || PathPrefix(`/api`))
+      kind: Rule
+      services:
+        - name: api@internal
+          kind: TraefikService
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRoute
+metadata:
+  name: echoserver-secure
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    - match: Host(`hello.[MY_DOMAIN]`)
+      kind: Rule
+      services:
+        - name: echoserver
+          namespace: default
+          kind: Service
+          port: 8080
+  tls:
+    # Specifying domains here adds the Host header to request to pod
+    domains:
+      - main: hello.ctf.rd-security-training.bbctest01.uk
+    secretName: traefik-ctf-cert
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRoute
+metadata:
+  name: echoserver-insecure
+spec:
+  entryPoints:
+    - web
+  routes:
+    - match: Host(`hello.[MY_DOMAIN]`)
+      kind: Rule
+      services:
+        - name: echoserver
+          namespace: default
+          kind: Service
+          port: 8080

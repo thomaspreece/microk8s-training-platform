@@ -1,0 +1,68 @@
+globalArguments:
+  - "--global.checknewversion"
+
+deployment:
+  enabled: true
+  replicas: 3
+  annotations: {}
+  podAnnotations: {}
+  additionalContainers: []
+  additionalVolumes: []
+  initContainers: []
+  imagePullSecrets: []
+
+autoscaling:
+  enabled: false
+  # minReplicas: 3
+  # maxReplicas: 6
+  # metrics:
+  # - type: Resource
+  #   resource:
+  #     name: cpu
+  #     targetAverageUtilization: 60
+  # - type: Resource
+  #   resource:
+  #     name: memory
+  #     targetAverageUtilization: 60
+
+ports:
+  web:
+    nodePort: 30080
+  websecure:
+    nodePort: 30443
+  admin:
+    port: 9080
+    # hostPort: 8000
+    expose: true
+    exposedPort: 9080
+    nodePort: 31080
+    # The port protocol (TCP/UDP)
+    protocol: TCP
+
+resources:
+  requests:
+    cpu: "100m"
+    memory: "50Mi"
+  limits:
+    cpu: "300m"
+    memory: "150Mi"
+
+affinity:
+  podAntiAffinity:
+    preferredDuringSchedulingIgnoredDuringExecution:
+    - weight: 100
+      podAffinityTerm:
+        labelSelector:
+          matchExpressions:
+          - key: app.kubernetes.io/name
+            operator: In
+            values:
+              - traefik
+        topologyKey: kubernetes.io/hostname
+
+service:
+  type: NodePort
+
+logs:
+  access:
+    enabled: true
