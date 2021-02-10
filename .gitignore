@@ -1,0 +1,4 @@
+keys/*.pem
+ctfd-keycloak-client-secret.txt
+security-shepherd-keycloak-client-secret.txt
+KeycloakClientSecrets/*.txt

@@ -1,0 +1,55 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  namespace: security-shepherd
+  creationTimestamp: null
+  name: security-shepherd
+  labels:
+    security-shepherd: security-shepherd
+    app: security-shepherd
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: security-shepherd
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        security-shepherd: security-shepherd
+        app: security-shepherd
+    spec:
+      containers:
+      - image: rdctf/security-shepherd
+        imagePullPolicy: ""
+        name: security-shepherd
+        resources: {}
+      restartPolicy: Always
+      serviceAccountName: ""
+      automountServiceAccountToken: false
+status: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: security-shepherd
+  creationTimestamp: null
+  labels:
+    app: security-shepherd
+  name: security-shepherd
+spec:
+  ports:
+  - name: http
+    port: 8080
+    protocol: TCP
+    targetPort: 8080
+  - name: https
+    port: 8443
+    protocol: TCP
+    targetPort: 8443
+  selector:
+    app: security-shepherd
+  type: ClusterIP
+status: {}

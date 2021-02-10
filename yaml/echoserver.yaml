@@ -1,0 +1,44 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  creationTimestamp: null
+  labels:
+    app: echoserver
+  name: echoserver
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: echoserver
+  strategy: {}
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: echoserver
+    spec:
+      containers:
+      - image: k8s.gcr.io/echoserver:1.4
+        name: echoserver
+        resources: {}
+status: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  creationTimestamp: null
+  labels:
+    app: echoserver
+  name: echoserver
+spec:
+  ports:
+  - name: echoserver-web
+    port: 8080
+    protocol: TCP
+    targetPort: 8080
+  selector:
+    app: echoserver
+  type: ClusterIP
+status:
+  loadBalancer: {}
+---

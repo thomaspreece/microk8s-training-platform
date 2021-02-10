@@ -1,0 +1,163 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: secure-coding-dojo-config
+  namespace: secure-coding-dojo
+data:
+  modules.json: |
+    {
+        "securityCodeReviewMaster":{
+            "name":"Security Code Review Master",
+            "summary":"Integrating security into code review",
+            "description":"Code review is, hopefully, part of regular development practices for any organization. Adding security elements to code review is the most effective measure in preventing vulnerabilities, even before the first commit.",
+            "skipMasterSalt":true,
+            "requiredModules":[]
+        },
+        "blackBelt":{
+            "name":"Black Belt",
+            "summary":"Common software security flaws",
+            "description":"This module is based on the SANS Top 25 - Most Dangerous Software Flaws. Lessons are entry level difficulty aimed at introducing the concepts of vulnerability, exploit and software defense.",
+            "requiredModules":[]
+        },
+        "secondDegreeBlackBelt":{
+            "name":"Second Degree Black Belt",
+            "summary":"Cloud software exploitation techniques",
+            "description":"Have some fun with this Capture the Flag module which is based on OWASP Top 10 (v2017). Your goal is to take down the cloud applications used in a worldwide malware campaign.",
+            "requiredModules":["blackBelt"]
+        },
+        "redTeam":{
+            "name":"Red Team",
+            "summary":"Pen-testing tools and techniques",
+            "description":"Learn about scanning, exploitation and persistance. Leverage vulnerabilities found in a cloud container application and perform lateral movement to cloud account resources.",
+            "requiredModules":["blackBelt"]
+        },
+        "blueTeam":{
+            "name":"Blue Team",
+            "summary":"Security controls and security engineering techniques",
+            "description":"Apply security controls to defend against common vulnerabilities and identify sensitive data in production applications.",
+            "requiredModules":["blackBelt"]
+        }
+    }
+  localUsers.json: |
+    {
+        "admin": {
+                "givenName": "Admin",
+                "familyName": "Admin",
+                "passSalt": "[FILL_ME_IN]",
+                "passHash": "[FILL_ME_IN]"
+        }
+    }
+  config.json: |
+    {
+      "dojoUrl" : "https://secure-coding-dojo.tools.rd-security-training.bbctest01.uk",
+      "moduleUrls" : {
+          "blackBelt":"https://insecureinc.tools.rd-security-training.bbctest01.uk/",
+          "securityCodeReviewMaster":"https://trendmicro.github.io/SecureCodingDojo/codereview101/?fromPortal"
+      },
+      "localUsersPath" : "localUsers.json",
+      "disabledModules":["secondDegreeBlackBelt","redTeam","blueTeam"],
+    }
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  namespace: secure-coding-dojo
+  creationTimestamp: null
+  labels:
+    secure-coding-dojo: trainingportal-pv
+    app: secure-coding-dojo-trainingportal-pv
+  name: secure-coding-dojo-trainingportal-pv
+spec:
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 100Mi
+status: {}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  namespace: secure-coding-dojo
+  creationTimestamp: null
+  name: secure-coding-dojo
+  labels:
+    secure-coding-dojo: secure-coding-dojo
+    app: secure-coding-dojo
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: secure-coding-dojo
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        secure-coding-dojo: secure-coding-dojo
+        app: secure-coding-dojo
+    spec:
+      initContainers:
+        - name: copy-local-config
+          image: busybox
+          command: ['sh', '-c', 'cp -u /config/localUsers.json /dojofiles/ && cp -u /config/config.json /dojofiles/']
+          volumeMounts:
+            - mountPath: /config
+              name: secure-coding-dojo-config
+            - mountPath: /dojofiles
+              name: secure-coding-dojo-trainingportal-pv
+        - name: update-log-driver
+          image: busybox
+          command: ['sh','-c','']
+      containers:
+      - env:
+        - name: CHALLENGE_MASTER_SALT
+          value: "[FILL_ME_IN]"
+        - name: ENC_KEY
+          value: "[FILL_ME_IN]"
+        - name: ENC_KEY_IV
+          value: "[FILL_ME_IN]"
+        - name: DATA_DIR
+          value: "/dojofiles"
+        image: securecodingdojo/trainingportal
+        imagePullPolicy: "IfNotPresent"
+        name: secure-coding-dojo
+        resources: {}
+        volumeMounts:
+          - mountPath: /dojofiles
+            name: secure-coding-dojo-trainingportal-pv
+          - mountPath: /home/node/app/static/lessons/modules.json
+            name: secure-coding-dojo-config
+            subPath: modules.json
+      restartPolicy: Always
+      serviceAccountName: ""
+      automountServiceAccountToken: false
+      volumes:
+      - name: secure-coding-dojo-config
+        configMap:
+          name: secure-coding-dojo-config
+      - name: secure-coding-dojo-trainingportal-pv
+        persistentVolumeClaim:
+          claimName: secure-coding-dojo-trainingportal-pv
+
+status: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: secure-coding-dojo
+  creationTimestamp: null
+  labels:
+    app: secure-coding-dojo
+  name: secure-coding-dojo
+spec:
+  ports:
+  - name: http
+    port: 8081
+    protocol: TCP
+    targetPort: 8081
+  selector:
+    app: secure-coding-dojo
+  type: ClusterIP
+status: {}

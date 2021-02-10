@@ -1,0 +1,54 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  namespace: secure-coding-dojo
+  creationTimestamp: null
+  name: secure-coding-dojo-insecureinc
+  labels:
+    secure-coding-dojo: secure-coding-dojo-insecureinc
+    app: secure-coding-dojo-insecureinc
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: secure-coding-dojo-insecureinc
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        secure-coding-dojo: secure-coding-dojo-insecureinc
+        app: secure-coding-dojo-insecureinc
+    spec:
+      containers:
+      - env:
+        - name: CHALLENGE_MASTER_SALT
+          value: "[FILL_ME_IN]"
+        image: securecodingdojo/insecure.inc
+        imagePullPolicy: "IfNotPresent"
+        name: secure-coding-dojo-insecureinc
+        resources: {}
+      restartPolicy: Always
+      serviceAccountName: ""
+      automountServiceAccountToken: false
+status: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: secure-coding-dojo
+  creationTimestamp: null
+  labels:
+    app: secure-coding-dojo-insecureinc
+  name: secure-coding-dojo-insecureinc
+spec:
+  ports:
+  - name: http
+    port: 8080
+    protocol: TCP
+    targetPort: 8080
+  selector:
+    app: secure-coding-dojo-insecureinc
+  type: ClusterIP
+status: {}
